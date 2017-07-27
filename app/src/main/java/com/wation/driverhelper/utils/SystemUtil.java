@@ -22,16 +22,19 @@ public class SystemUtil {
     private static final String TAG = SystemUtil.class.getSimpleName();
     private static boolean playing = false;
     private static Timer timer;
+    private static final String ALARM_AUDIO_PATH = "/sdcard/DriverHelper/alarm.wav";
+    private static final String REST_AUDIO_PATH = "/sdcard/DriverHelper/rest.wav";
+
 
     public static void playAlarmMusic(final Context context) {
-        playMusic(context, R.raw.alarm);
+        playMusic(context, ALARM_AUDIO_PATH);
     }
 
     public static void playRestMusic(final Context context) {
-        playMusic(context, R.raw.rest);
+        playMusic(context, REST_AUDIO_PATH);
     }
 
-    public static void playMusic(final Context context, final int resId) {
+    public static void playMusic(final Context context, final String audioPath) {
         if (timer != null) {
             timer.cancel();
             timer = null;
@@ -50,8 +53,15 @@ public class SystemUtil {
                     return;
                 }
 
+                AudioManager mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                int maxVolumeValue = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM);
+                int lastVolumeValue = mAudioManager.getStreamVolume(AudioManager.STREAM_SYSTEM);
+
+                // 设置最大音量
+                mAudioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, maxVolumeValue, 0);
+
                 SoundPool soundPool = new SoundPool(10, AudioManager.STREAM_SYSTEM, 5);
-                soundPool.load(context, resId, 1);
+                soundPool.load(audioPath, 1);
 
                 try {
                     Thread.sleep(200); // 给予初始化音乐文件足够时间
@@ -61,6 +71,9 @@ public class SystemUtil {
                 Log.i(TAG, "play sound.");
                 soundPool.play(1, 1, 1, 0, 0, 1);
                 soundPool.unload(1);
+
+                // 恢复原来音量
+                mAudioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, lastVolumeValue, 0);
             }
         }, 10, 60 * 1000);
 //        new Thread(new Runnable() {
