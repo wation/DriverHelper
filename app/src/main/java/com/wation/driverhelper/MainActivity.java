@@ -30,10 +30,12 @@ import java.util.TimerTask;
 @SuppressLint("ShowToast")
 public class MainActivity extends Activity {
     private final static String TAG = MainActivity.class.getSimpleName();
-    private final static long PLAY_DEADLINE_MS = (3 * 60 + 30) * 60 * 1000; // 3小时30分
-    private final static long PAUSE_DEADLINE_MS = 20 * 60 * 1000; // 20分
-//    private final static long PLAY_DEADLINE_MS = 60 * 1000;
-//    private final static long PAUSE_DEADLINE_MS = 20 * 1000;
+//    private final static long PLAY_DEADLINE_MS = (3 * 60) * 60 * 1000; // 3小时
+//    private final static long PAUSE_DEADLINE_MS = 20 * 60 * 1000; // 20分
+//    private final static long PAUSE_DEADLINE_MS_2 = PAUSE_DEADLINE_MS + (2 * 60 * 1000); // 22分
+    private final static long PLAY_DEADLINE_MS = 2 * 60 * 1000; // 5 *
+    private final static long PAUSE_DEADLINE_MS = 3 * 20 * 1000; // 10 *
+    private final static long PAUSE_DEADLINE_MS_2 = PAUSE_DEADLINE_MS + (1 * 60 * 1000); // 22分
 
     private final static String ALARM_TIP_TEXT = "您该停车休息了";
     private final static String REST_TIP_TEXT = "休息时间到，可以继续开车了";
@@ -185,10 +187,10 @@ public class MainActivity extends Activity {
                         // 针对休息的不同处理
                         if (status == TASK_STATUS.TS_PAUSE) {
                             // 休息计时器
-                            if (mTimer1.getTime() > PAUSE_DEADLINE_MS + (60 * 1000)) {
+                            if (mTimer1.getTime() > PAUSE_DEADLINE_MS_2) {
                                 Log.i(TAG, "set PLAY enabled");
-                                findViewById(R.id.button2).setEnabled(true); // 满21分才有效
-//                                stopTimer(mTimer0, false, false); // 只有休息够了，时间才清零
+                                // findViewById(R.id.button2).setEnabled(true); // 满21分才有效
+                                // stopTimer(mTimer0, false, false); // 只有休息够了，时间才清零
                             }
                         }
                     }
@@ -324,10 +326,15 @@ public class MainActivity extends Activity {
             case R.id.button2:  //行車 // 设置按钮状态
                 status = TASK_STATUS.TS_PLAY; // 设置按钮状态
 
-                // 保存到配置文件，更新开始时间，设置为行车类型
-                configAdmin.updatePlayTime(currentTimsMs);
+                // 考虑临时停车，只有休息足够时间才重新计算行车时间
+                if (mTimer1.getTime() > PAUSE_DEADLINE_MS_2) {
+                    // 保存到配置文件，更新开始时间，设置为行车类型
+                    configAdmin.updatePlayTime(currentTimsMs);
 
-                startTimer(mTimer0, 0); // 行车计时器开始计时
+                    startTimer(mTimer0, 0); // 行车计时器开始计时
+                } else {
+                    startTimer(mTimer0, mTimer0.getTime()); // 行车计时器继续计时
+                }
                 stopTimer(mTimer1, true, false); // 休息计时器停止计时
 
                 break;
@@ -382,7 +389,7 @@ public class MainActivity extends Activity {
 
             case TS_PAUSE: // 休息状态，只有行车有效
                 findViewById(R.id.button1).setEnabled(false);
-                findViewById(R.id.button2).setEnabled(false);
+                findViewById(R.id.button2).setEnabled(true);
                 findViewById(R.id.button3).setEnabled(false);
                 findViewById(R.id.button4).setEnabled(true);
                 break;
