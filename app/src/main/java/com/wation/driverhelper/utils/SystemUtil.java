@@ -1,6 +1,7 @@
 package com.wation.driverhelper.utils;
 
 import android.app.ActivityManager;
+import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.media.AudioManager;
@@ -189,5 +190,18 @@ public class SystemUtil {
         Log.i(TAG,"当前进程名称:" + processName);
 
         return processName;
+    }
+
+    public final static boolean isScreenLocked(Context c) {
+
+        android.app.KeyguardManager mKeyguardManager = (KeyguardManager) c.getSystemService(c.KEYGUARD_SERVICE);
+        return !mKeyguardManager.inKeyguardRestrictedInputMode();
+
+    }
+
+    public final static void killProcess(Context context, String packageName) {
+        ActivityManager mAm = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        // mAm.forceStopPackage(packageName);
+        mAm.restartPackage(packageName);
     }
 }

@@ -64,6 +64,10 @@ public class KeepAliveService extends Service {
             @Override
             public void run() {
                 Log.i(TAG, "run");
+//                if (SystemUtil.isScreenLocked(mContext)) {
+//                    Log.i(TAG, "screen locked, restart app.");
+//                    SystemUtil.killProcess(mContext, MAIN_APP_PACKAGE);
+//                }
                 // 发送广播启动APP
                 sendBroadcast(new Intent(AlarmBroadcastReceiver.ACTION_ALARM_CLOCK));
 //                if (!SystemUtil.isAppRunning(mContext, MAIN_APP_PACKAGE)) {

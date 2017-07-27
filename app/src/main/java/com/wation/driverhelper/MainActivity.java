@@ -5,8 +5,10 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -16,7 +18,9 @@ import android.widget.TextView;
 
 import com.wation.driverhelper.utils.AlarmManagerUtil;
 import com.wation.driverhelper.utils.SystemUtil;
+import com.wation.keepalive.KeepAliveManager;
 import com.wation.keepalive.KeepAliveService;
+import com.wation.keepalive.ScreenListener;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -61,8 +65,8 @@ public class MainActivity extends Activity {
         Log.i(TAG, "onCreate");
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                        | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON );
 
         mContext = this;
 
@@ -76,6 +80,29 @@ public class MainActivity extends Activity {
         mTimer1.setType(Anticlockwise.TYPE_PAUSE);
 
         textViewTip = (TextView) findViewById(R.id.textViewTip);
+
+//        /**
+//         * 屏幕监听器 黑屏杀死自己
+//         */
+//        ScreenListener mScreenListener = new ScreenListener(mContext);
+//        mScreenListener.begin(new ScreenListener.ScreenStateListener() {
+//
+//            @Override
+//            public void onUserPresent() {
+//                Log.e(TAG, "onUserPresent");
+//            }
+//
+//            @Override
+//            public void onScreenOn() {
+//                Log.e(TAG, "onScreenOn");
+//            }
+//
+//            @Override
+//            public void onScreenOff() {
+//                Log.e(TAG, "onScreenOff");
+//                MainActivity.this.finish();
+//            }
+//        });
     }
 
     private void setAlarmTipText() {
@@ -199,9 +226,26 @@ public class MainActivity extends Activity {
         }, 1000, 1000);
     }
 
+    PowerManager.WakeLock mPowerWakeLock;
+
     @Override
     protected void onResume() {
         Log.i(TAG, "onResume");
+
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        mPowerWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                | PowerManager.FULL_WAKE_LOCK
+                | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                | PowerManager.ON_AFTER_RELEASE, this.getClass().getCanonicalName());
+        mPowerWakeLock.acquire();
+
+//        Timer timer = new Timer();
+//        timer.schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//                mPowerWakeLock.release();
+//            }
+//        }, 1000);
 
         initData();
 
@@ -280,6 +324,13 @@ public class MainActivity extends Activity {
         }
         System.out.println("执行 onDestroy()");
 
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.i(TAG, "event:" + event);
+        mPowerWakeLock.release();
+        return super.onTouchEvent(event);
     }
 
 //    //以下两个函数，是用来使程序息屏后，继续执行。（但未实现）
