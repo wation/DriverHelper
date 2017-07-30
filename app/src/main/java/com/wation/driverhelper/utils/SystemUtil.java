@@ -11,6 +11,7 @@ import android.util.Log;
 
 import com.wation.driverhelper.R;
 
+import java.io.File;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,11 +29,63 @@ public class SystemUtil {
 
 
     public static void playAlarmMusic(final Context context) {
-        playMusic(context, ALARM_AUDIO_PATH);
+        if (new File(ALARM_AUDIO_PATH).exists()) {
+            playMusic(context, ALARM_AUDIO_PATH);
+        } else {
+            playMusic(context, R.raw.alarm);
+        }
     }
 
     public static void playRestMusic(final Context context) {
-        playMusic(context, REST_AUDIO_PATH);
+        if (new File(REST_AUDIO_PATH).exists()) {
+            playMusic(context, REST_AUDIO_PATH);
+        } else {
+            playMusic(context, R.raw.rest);
+        }
+    }
+
+    public static void playMusic(final Context context, final int audioId) {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+
+        playing = true;
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (!playing) {
+                    if (timer != null) {
+                        timer.cancel();
+                        timer = null;
+                    }
+                    return;
+                }
+
+                AudioManager mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                int maxVolumeValue = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM);
+                int lastVolumeValue = mAudioManager.getStreamVolume(AudioManager.STREAM_SYSTEM);
+
+                // 设置最大音量
+                mAudioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, maxVolumeValue, 0);
+
+                SoundPool soundPool = new SoundPool(10, AudioManager.STREAM_SYSTEM, 5);
+                soundPool.load(context, audioId, 1);
+
+                try {
+                    Thread.sleep(200); // 给予初始化音乐文件足够时间
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Log.i(TAG, "play sound.");
+                soundPool.play(1, 1, 1, 0, 0, 1);
+                soundPool.unload(1);
+
+                // 恢复原来音量
+                mAudioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, lastVolumeValue, 0);
+            }
+        }, 10, 60 * 1000);
     }
 
     public static void playMusic(final Context context, final String audioPath) {
